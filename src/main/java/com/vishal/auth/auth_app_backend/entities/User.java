@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -24,10 +26,10 @@ public class User {
     @Column(name = "user_id")
     private UUID id;
 
-    @Column(name = "user-email", unique = true, length = 100)
+    @Column(name = "user_email", unique = true, length = 100)
     private String email;
 
-    @Column(name = "user-name", length = 100)
+    @Column(name = "user_name", length = 100)
     private String name;
     private String password;
     private String image;
@@ -53,5 +55,6 @@ public class User {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = Instant.now();
+//        updatedAt = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
     }
 }
