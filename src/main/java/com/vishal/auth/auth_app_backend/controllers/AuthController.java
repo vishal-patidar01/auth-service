@@ -7,8 +7,10 @@ import com.vishal.auth.auth_app_backend.entities.RefreshToken;
 import com.vishal.auth.auth_app_backend.entities.User;
 import com.vishal.auth.auth_app_backend.repositories.RefreshTokenRepository;
 import com.vishal.auth.auth_app_backend.repositories.UserRepository;
+import com.vishal.auth.auth_app_backend.security.CookieService;
 import com.vishal.auth.auth_app_backend.security.JwtService;
 import com.vishal.auth.auth_app_backend.services.AuthService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -38,11 +40,13 @@ public class AuthController {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final ModelMapper modelMapper;
+    private final CookieService cookieService;
 
 
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(
-            @RequestBody LoginRequest loginRequest
+            @RequestBody LoginRequest loginRequest,
+            HttpServletResponse response
     ) {
 
         // 1.  authenticate karen
@@ -62,13 +66,17 @@ public class AuthController {
                 .revoked(false)
                 .build();
 
-        // Save refresh token
+        // Save refresh token the information
         refreshTokenRepository.save(refreshTokenOb);
 
 
-        // 2. generate token
+        // 2. Access token generate
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user, refreshTokenOb.getJti());
+
+
+        cookieService.attachRefreshCookie(response, refreshToken, (int)jwtService.getRefreshTtlSeconds());
+        cookieService.addNoStoreHeaders(response);
 
         TokenResponse tokenResponse = TokenResponse.of(accessToken, refreshToken, jwtService.getAccessTtlSeconds(), modelMapper.map(user, UserDto.class));
         return ResponseEntity.ok(tokenResponse);
